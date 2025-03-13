@@ -2,12 +2,11 @@ import creds
 import asyncio
 import logging
 from typing import TYPE_CHECKING
-
 import asqlite
-
 import twitchio
 from twitchio.ext import commands
 from twitchio import eventsub
+import Notif
 
 if TYPE_CHECKING:
     import sqlite3
@@ -57,15 +56,10 @@ class Bot(commands.Bot):
     async def setup_hook(self) -> None:
         # Add our component which contains our commands...
         await self.add_component(MyComponent(self))
-
-        # Subscribe to read chat (event_message) from our channel as the bot...
-        # This creates and opens a websocket to Twitch EventSub...
-        subscription = eventsub.ChatMessageSubscription(broadcaster_user_id=OWNER_ID, user_id=BOT_ID)
-        await self.subscribe_websocket(payload=subscription)
-
+        
         # Subscribe and listen to when a stream goes live..
         # For this example listen to our own stream...
-        subscription = eventsub.StreamOnlineSubscription(broadcaster_user_id=OWNER_ID)
+        subscription = eventsub.StreamOnlineSubscription(broadcaster_user_id=TARGET_ID)
         await self.subscribe_websocket(payload=subscription)
 
     async def add_token(self, token: str, refresh: str) -> twitchio.authentication.ValidateTokenPayload:
@@ -113,44 +107,6 @@ class MyComponent(commands.Component):
         # We pass bot here as an example...
         self.bot = bot
 
-    # We use a listener in our Component to display the messages received.
-    @commands.Component.listener()
-    async def event_message(self, payload: twitchio.ChatMessage) -> None:
-        print(f"[{payload.broadcaster.name}] - {payload.chatter.name}: {payload.text}")
-
-    @commands.command(aliases=["hello", "howdy", "hey"])
-    async def hi(self, ctx: commands.Context) -> None:
-        """Simple command that says hello!
-
-        !hi, !hello, !howdy, !hey
-        """
-        await ctx.reply(f"Hello {ctx.chatter.mention}!")
-
-    @commands.group(invoke_fallback=True)
-    async def socials(self, ctx: commands.Context) -> None:
-        """Group command for our social links.
-
-        !socials
-        """
-        await ctx.send("discord.gg/..., youtube.com/..., twitch.tv/...")
-
-    @socials.command(name="discord")
-    async def socials_discord(self, ctx: commands.Context) -> None:
-        """Sub command of socials that sends only our discord invite.
-
-        !socials discord
-        """
-        await ctx.send("discord.gg/...")
-
-    @commands.command(aliases=["repeat"])
-    @commands.is_moderator()
-    async def say(self, ctx: commands.Context, *, content: str) -> None:
-        """Moderator only command which repeats back what you say.
-
-        !say hello world, !repeat I am cool LUL
-        """
-        await ctx.send(content)
-
     @commands.Component.listener()
     async def event_stream_online(self, payload: twitchio.StreamOnline) -> None:
         # Event dispatched when a user goes live from the subscription we made above...
@@ -162,6 +118,8 @@ class MyComponent(commands.Component):
         #     message=f"Hi... {payload.broadcaster}! You are live!",
         # )
         print(f"{payload.broadcaster} is live!")
+        Notif.notify_now()
+        
 
 def main() -> None:
     twitchio.utils.setup_logging(level=logging.INFO)
@@ -170,13 +128,9 @@ def main() -> None:
         async with asqlite.create_pool("tokens.db") as tdb, Bot(token_database=tdb) as bot:
             await bot.setup_database()
             await bot.start()# Subscribe to read chat (event_message) from our channel as the bot...
-        # This creates and opens a websocket to Twitch EventSub...
-        subscription = eventsub.ChatMessageSubscription(broadcaster_user_id=OWNER_ID, user_id=BOT_ID)
-        await self.subscribe_websocket(payload=subscription)
-
         # Subscribe and listen to when a stream goes live..
         # For this example listen to our own stream...
-        subscription = eventsub.StreamOnlineSubscription(broadcaster_user_id=OWNER_ID)
+        subscription = eventsub.StreamOnlineSubscription(broadcaster_user_id=TARGET_ID)
         await self.subscribe_websocket(payload=subscription)
 
     try:
