@@ -176,3 +176,6 @@ creds.py
 tokens.db
 tokens.db-shm
 tokens.db-wal
+.tio.tokens.json
+queue testing.py
+test.py
