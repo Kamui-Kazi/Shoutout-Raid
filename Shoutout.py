@@ -16,6 +16,7 @@
 # You only have to do the above once for this example.
 
 import os
+from dotenv import load_dotenv
 import time
 import asyncio
 import logging
@@ -43,6 +44,8 @@ class Bot(commands.Bot):
     async def event_ready(self):
         # When the bot is ready
         LOGGER.info("Successfully logged in as: %s", self.bot_id)
+        # ws = self.create_partialuser(user_id=self.target_id, user_login=os.environ['CHANNEL'])
+        # await ws.send_message(sender=self.bot_id, message='Hello peoples yokasiWave')
 
     #oauth token portion
     async def setup_hook(self) -> None:
@@ -107,6 +110,7 @@ class MyComponent(commands.Component):
         )
 
 def main() -> None:
+    load_dotenv()
     twitchio.utils.setup_logging(level=logging.INFO)
 
     async def runner() -> None:
