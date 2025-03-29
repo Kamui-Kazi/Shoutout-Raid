@@ -33,8 +33,8 @@ class Bot(commands.Bot):
     async def event_ready(self):
         # When the bot is ready
         LOGGER.info("Successfully logged in as: %s", self.bot_id)
-        # ws = self.create_partialuser(user_id=self.target_id, user_login=os.environ['CHANNEL'])
-        # await ws.send_message(sender=self.bot_id, message='Hello peoples yokasiWave')
+        # target = self.create_partialuser(user_id=self.target_id, user_login=self.target_name)
+        # await target.send_message(sender=self.bot_id, message='Bot has landed')
 
     #oauth token portion
     async def setup_hook(self) -> None:
@@ -91,7 +91,8 @@ class MyComponent(commands.Component):
         # Event dispatched when a user gets a raid from the subscription we made above...
         if (payload.from_broadcaster.id != self.bot.target_id) and (payload.to_broadcaster.id == self.bot.target_id):
             await payload.to_broadcaster.send_shoutout(
-                to_broadcaster={payload.from_broadcaster}
+                to_broadcaster=payload.from_broadcaster.id,
+                moderator=self.bot.bot_id,
             )
             time.sleep(1)
             await payload.to_broadcaster.send_message(
