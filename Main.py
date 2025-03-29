@@ -1,28 +1,12 @@
-# Simple example for TwitchIO V3 Alpha...
-# Instructions:
-
-# You need to install: https://github.com/Rapptz/asqlite
-# pip install -U git+https://github.com/Rapptz/asqlite.git
-
-# 1.) Comment out lines: 54-60 (The subscriptions)
-# 2.) Add the Twitch Developer Console and Create an Application
-# 3.) Add: http://localhost:4343/oauth/callback as the callback URL
-# 4.) Enter your CLIENT_ID, CLIENT_SECRET, BOT_ID and OWNER_ID
-# 5.) Run the bot.
-# 6.) Logged in the bots user account, visit: http://localhost:4343/oauth?scopes=user:read:chat%20user:write:chat%20user:bot
-# 7.) Logged in as your personal user account, visit: http://localhost:4343/oauth?scopes=channel:bot
-# 8.) Uncomment lines: 54-60 (The subscriptions)
-# 9.) Restart the bot.
-# You only have to do the above once for this example.
-
 import os
 from dotenv import load_dotenv
 import time
 import asyncio
 import logging
 import sqlite3
-
 import asqlite
+
+
 import twitchio
 from twitchio.ext import commands
 from twitchio import eventsub
@@ -32,13 +16,18 @@ LOGGER: logging.Logger = logging.getLogger("Bot")
 class Bot(commands.Bot):
     def __init__(self, *, token_database: asqlite.Pool) -> None:
         self.token_database = token_database
-        self.target_id=os.environ['TARGET_ID_1']
+        
+        self.owner_name=os.environ['OWNER_NAME']
+        self.bot_name=os.environ['BOT_NAME']
+        self.target_id=os.environ['TARGET_ID']
+        self.target_name=os.environ['TARGET_NAME']
+        
         super().__init__(
-            client_id=os.environ['TWITCH_CLIENT_ID'],
-            client_secret=os.environ['TWITCH_CLIENT_SECRET'],
-            bot_id=os.environ['OWNER_ID'],
-            owner_id=os.environ['BOT_ID'],
-            prefix="!",
+            client_id=os.environ['CLIENT_ID'],
+            client_secret=os.environ['CLIENT_SECRET'],
+            bot_id=os.environ['BOT_ID'],
+            owner_id=os.environ['OWNER_ID'],
+            prefix=os.environ['BOT_PREFIX'],
         )
     
     async def event_ready(self):
@@ -98,16 +87,18 @@ class MyComponent(commands.Component):
         self.bot = bot
 
     @commands.Component.listener()
-    async def event_stream_raid(self, payload: twitchio.eventsub.ChannelRaidSubscription) -> None:
+    async def event_raid(self, payload: twitchio.ChannelRaid) -> None:
         # Event dispatched when a user gets a raid from the subscription we made above...
-        await payload.to_broadcaster.send_shoutout(
-            to_broadcaster={payload.from_broadcaster}
-        )
-        time.sleep(1)
-        await payload.to_broadcaster.send_message(
-            sender=self.bot.bot_id,
-            message="!raiders",
-        )
+        if (payload.from_broadcaster.id != self.bot.target_id) and (payload.to_broadcaster.id == self.bot.target_id):
+            await payload.to_broadcaster.send_shoutout(
+                to_broadcaster={payload.from_broadcaster}
+            )
+            time.sleep(1)
+            await payload.to_broadcaster.send_message(
+                sender=self.bot.bot_id,
+                message="!raiders",
+            )
+        LOGGER.info(f"[Raid detected] - {payload.from_broadcaster.display_name} is raiding {payload.to_broadcaster.display_name} with {payload.viewer_count} viewers!")
 
 def main() -> None:
     load_dotenv()
