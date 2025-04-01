@@ -1,0 +1,5 @@
+SCREEN_WIDTH: int=800
+SCREEN_HEIGHT: int=800
+TEXT_COLOR: str='#3f3f3f'
+WINDOW_BG: str='#b7b7b7'
+GRID_COLOR: str='#000000'

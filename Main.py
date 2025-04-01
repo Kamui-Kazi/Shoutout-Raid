@@ -4,7 +4,8 @@ import asyncio
 import logging
 import sqlite3
 import asqlite
-
+import pygame
+import datetime
 
 import twitchio
 from twitchio.ext import commands
@@ -12,10 +13,17 @@ from twitchio import eventsub
 
 LOGGER: logging.Logger = logging.getLogger("Bot")
 
+class Connection:
+    def __init__(self):
+        self.last_raider_name = "None"
+        self.last_raider_count = 0
+        self.last_raid_time = datetime.datetime.now()
+
 
 class Bot(commands.Bot):
-    def __init__(self, *, token_database: asqlite.Pool) -> None:
+    def __init__(self, connection: Connection, *, token_database: asqlite.Pool) -> None:
         self.token_database = token_database
+        self.connection = connection
 
         self.owner_name=os.environ['OWNER_NAME']
         self.bot_name=os.environ['BOT_NAME']
@@ -85,7 +93,7 @@ class Bot(commands.Bot):
         async with self.token_database.acquire() as connection:
             await connection.execute(query)
 
-    
+
 class MyComponent(commands.Component):
     def __init__(self, bot: Bot):
         self.bot = bot
@@ -102,17 +110,64 @@ class MyComponent(commands.Component):
         #     sender=self.bot_id,
         #     message="!raiders",
         # )
+        self.bot.connection.last_raider_name = payload.from_broadcaster.display_name
+        self.bot.connection.last_raider_count =  payload.viewer_count
+        self.bot.connection.last_raid_time = payload.timestamp
         LOGGER.info(f"[Raid detected] - {payload.from_broadcaster.display_name} is raiding {payload.to_broadcaster.display_name} with {payload.viewer_count} viewers!")
+
+
+class Interface():
+    def __init__(self, connection: Connection):
+        self.connection = connection
+        pygame.init()
+        self.screen = pygame.display.set_mode((int(os.environ['SCREEN_WIDTH']), int(os.environ['SCREEN_HEIGHT'])))
+        pygame.display.set_caption("Twitch Raid Bot")
+        self.font = pygame.font.Font(None, 36)
+
+    async def run(self):
+        #Runs the Pygame UI in an async loop.
+        clock = pygame.time.Clock()
+        running = True
+        while running:
+            self.screen.fill((30, 30, 30))  # Clear screen
+
+            # Check events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+            # Draw text
+            text = self.font.render("Twitch Raid Bot Running...", True, (255, 255, 255))
+            self.screen.blit(text, (50, 50))
+
+            # Draw last raid
+            raid_info = f"{self.connection.last_raid_time.strftime("%I:%M%p")} - {self.connection.last_raider_name} just raided with {self.connection.last_raider_count} viewers"
+            text = self.font.render(raid_info,True,(255,255,255))
+            self.screen.blit(text, (50, 100))
+
+            pygame.display.flip()  # Update screen
+            await asyncio.sleep(0.01)  # Yield control to async tasks (replaces tick)
+
+        pygame.quit()
+        asyncio.get_event_loop().stop()  # Stop the asyncio loop
+
 
 def main() -> None:
     load_dotenv()
     twitchio.utils.setup_logging(level=logging.INFO)
 
+    link = Connection()
+    
     async def runner() -> None:
-        async with asqlite.create_pool("tokens.db") as tdb, Bot(token_database=tdb) as bot:
+        async with asqlite.create_pool("tokens.db") as tdb, Bot(connection=link, token_database=tdb) as bot:
+            interface = Interface(connection=link)  # Create the Pygame interface object
             await bot.setup_database()
-            await bot.start()
-
+            
+            # Run both Pygame UI and TwitchIO bot together
+            await asyncio.gather(
+                bot.start(),        # Start Twitch bot
+                interface.run(),    # Start Pygame loop (make sure it's an async function!)
+            )
     try:
         asyncio.run(runner())
     except KeyboardInterrupt:
