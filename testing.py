@@ -8,6 +8,7 @@ import asyncio
 import pygame
 import datetime
 import pygame_scheme
+from fake_objects import FakeChannelRaid
 
 # import twitchio
 # from twitchio.ext import commands
@@ -21,7 +22,8 @@ GRID_COLOR = pygame_scheme.GRID_COLOR
 
 class Connection:
     def __init__(self):
-        self.last_raider_name = "None"
+        sample_raid = FakeChannelRaid()
+        self.raids = [sample_raid, sample_raid, sample_raid, sample_raid, sample_raid]
         self.last_raider_count = 0
         self.last_raid_time = datetime.datetime.now()
         self.bot_name = "Kamui_Kazi"
@@ -69,7 +71,11 @@ class Interface:
             text = self.font.render(f"Channel name: {self.connection.channel_name}", True, TEXT_COLOR)
             self.screen.blit(text, (275, 5))
 
-            
+            # drawing history of raids
+            for i in range(self.connection.raids.__len__()):
+                #print(f"{self.connection.raids[i].timestamp} - {self.connection.raids[i].from_broadcaster.name} with {self.connection.raids[i].viewer_count} viewers")
+                text = self.font.render(f"{self.connection.raids[i].timestamp} - {self.connection.raids[i].from_broadcaster.name[0]} with {self.connection.raids[i].viewer_count} viewers", True, TEXT_COLOR)
+                self.screen.blit(text, (0, 50*(i+1)))
             
             
             
@@ -84,7 +90,7 @@ class Interface:
 
             pygame.display.flip()  # Update screen
             await asyncio.sleep(0.01)  # Yield control to async tasks (replaces tick)
-
+            
         pygame.quit()
         asyncio.get_event_loop().stop()  # Stop the asyncio loop
 
