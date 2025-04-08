@@ -1,17 +1,12 @@
 import os
 from dotenv import load_dotenv
-import logging
-
 from my_websockets import my_websockets
+import logging
+import twitchio
 
 
-
-LOGGER: logging.Logger = logging.getLogger("WS")
-
-
-
-
-
+LOGGER: logging.Logger = logging.getLogger(__name__)
+twitchio.utils.setup_logging(level=logging.INFO)
 
 
 def main() -> None:
