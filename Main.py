@@ -1,11 +1,10 @@
 import os
 from dotenv import load_dotenv
 import asyncio
-from asyncio import queues
 import logging
 import sqlite3
 import asqlite
-
+import time
 
 import twitchio
 from twitchio.ext import commands
@@ -30,8 +29,11 @@ class Bot(commands.Bot):
             owner_id=os.environ['OWNER_ID'],
             prefix=os.environ['BOT_PREFIX'],
         )
-
-        self.shoutout_queue = asyncio.Queue()
+        
+        self.shout_queue = asyncio.Queue()
+        self.shout_task = None
+        self.shout_cooldown = 121
+        self.last_shout_time = 0
 
     async def event_ready(self):
         # When the bot is ready
@@ -42,16 +44,13 @@ class Bot(commands.Bot):
     #oauth token portion
     #   setting up the webhooks and adding compontent object
     async def setup_hook(self) -> None:
-        # Add our component which contains our commands...
         await self.add_component(MyComponent(self))
 
-        # Subscribe and listen to when a stream gets a raid..
-        # For this example listen to our target's stream...
         subscription = eventsub.ChannelRaidSubscription(to_broadcaster_user_id=self.target_id)
         await self.subscribe_websocket(payload=subscription)
-
-        # Start queue processing in the background
-        asyncio.create_task(self.process_queue())
+        
+        subscription = eventsub.ShoutoutCreateSubscription(broadcaster_user_id=self.target_id, moderator_user_id=self.owner_id)
+        await self.subscribe_websocket(payload=subscription)
     
     #   adds tokens from localhost:433
     async def add_token(self, token: str, refresh: str) -> twitchio.authentication.ValidateTokenPayload:
@@ -91,16 +90,27 @@ class Bot(commands.Bot):
         async with self.token_database.acquire() as connection:
             await connection.execute(query)
     
-    #queue prossesing and shoutout portion
-    #   gets the raid info from the queue and calls for a shoutout
-    async def process_queue(self):
-        # Continuously processes the queue with a 2 minute cooldown
-        while True:
-            raid_payload = await self.shoutout_queue.get()  # Get next raid in queue
-            await self.send_shoutout(raid_payload)  # Perform the shoutout
-            await asyncio.sleep(120)  # Wait 2 minutes before next shoutout
+    async def start_shout_timer(self):
+        try:
+            while True:
+                now = time.monotonic()
+                time_since_last = now - self.last_shout_time
+                
+                if time_since_last < self.shout_cooldown:
+                    delay = self.shout_cooldown - time_since_last
+                    LOGGER.info("Waiting %.1f seconds for cooldown to expire", delay)
+                    await asyncio.sleep(delay)
+                    LOGGER.info("Cooldown to expired, ready to shout")
+                
+                raid_payload:twitchio.ChannelRaid = await self.shout_queue.get()
+                await self.send_shoutout(raid_payload)
+                self.last_shout_time = time.monotonic()
+                LOGGER.info("Shouted out %s, cooldown reset.", raid_payload.from_broadcaster.display_name)
+        except asyncio.CancelledError:
+            LOGGER.info("Shoutout loop cancelled.")
+            # Let the loop restart cleanly on next shoutout
+            raise
     
-    #   sent a shoutout to the target channel
     async def send_shoutout(self, payload: twitchio.ChannelRaid):
         await payload.to_broadcaster.send_shoutout(
             to_broadcaster=payload.from_broadcaster.id,
@@ -118,9 +128,22 @@ class MyComponent(commands.Component):
         self.bot = bot
         
     @commands.Component.listener()
+    async def event_shoutout_created(self, payload: twitchio.ShoutoutCreate) -> None:
+        LOGGER.info("Manual shoutout for %s detected. Resetting timer.", payload.to_broadcaster.display_name)
+        self.bot.last_shout_time = time.monotonic()
+
+        # Reset the loop if it's already running
+        if self.bot.shout_task and not self.bot.shout_task.done():
+            self.bot.shout_task.cancel()
+
+        self.shoutout_task = asyncio.create_task(self.bot.start_shout_timer())
+        
+    @commands.Component.listener()
     async def event_raid(self, payload: twitchio.ChannelRaid) -> None:
         # Event dispatched when a user gets a raid from the subscription we made above...
-        await self.bot.shoutout_queue.put(payload)  # Add raid to the queue
+        await self.bot.shout_queue.put(payload)  # Add raid to the queue
+        if not self.bot.shout_task or self.bot.shout_task.done():
+            self.bot.shout_task = asyncio.create_task(self.bot.start_shout_timer())
         LOGGER.info(f"[Raid detected] - {payload.from_broadcaster.display_name} is raiding {payload.to_broadcaster.display_name} with {payload.viewer_count} viewers!")
 
 def main() -> None:
