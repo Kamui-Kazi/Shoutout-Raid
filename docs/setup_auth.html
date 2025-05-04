@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Authenticate Bots</title>
+    <!-- global -->
+    <link rel="stylesheet" href="../style/style.css" />
+    <!-- project-specific -->
+    <link rel="stylesheet" href="style/style.css" />
+  </head>
+
+  <body>
+    <main>
+      <section>
+        <h1>Shoutout Raid Bot - Setup Guide - Authenticate Bots</h1>
+        <p>
+          The next step is to autherize your bot, this is so that your bot can
+          connect to twitch.
+        </p>
+        <p>
+          There are 9 steps to authenticating your bot, don't worry it's all
+          done through a menu:
+        </p>
+        <ol>
+          <li>run the file "run.py"</li>
+          <li>on the menu screen, select option 2</li>
+          <li>wait for the console to stop printing text</li>
+          In the text there should be a link, either use it from there or use
+          this link.<br />
+          <a
+            href="http://localhost:4343/oauth?scopes=channel:bot%20user:read:chat%20user:write:chat%20user:bot%20moderator:manage:shoutouts"
+            >http://localhost:4343/oauth?scopes=channel:bot%20user:read:chat%20user:write:chat%20user:bot%20moderator:manage:shoutouts</a
+          >
+          <li>
+            visit the link in your browser while logged into twitch as your
+            stream account
+          </li>
+          <li>
+            visit the link in your browser while logged into twitch as your bot
+            account
+          </li>
+          To make this easier you can login to your bot account in a
+          private/incognito window, or in an unused browser like edge.<br />
+          Doing so will let you stay logged in as your stream account on your
+          main browser window.
+          <li>
+            Both times you visit the links you should be prompted to allow a
+            list of permissions, click allow.
+          </li>
+          <li>
+            You should see text in the console that indicates tokens were added
+            to the database for the user IDs of both accounts
+          </li>
+          <li>
+            press ctrl+c to bring you back to the menu, or kill the bots and
+            relaunch
+          </li>
+          <li>
+            when you are back to the menu screen you should be ready for the
+            next step
+          </li>
+        </ol>
+        <p>
+          Something to note the link provided above will provide unessisary
+          permisions do your accounts, if this is and issue for you then you can
+          use the following links instead:<br />
+        </p>
+        <ul>
+          <li>
+            For your stream account:
+            <a href="http://localhost:4343/oauth?scopes=channel:bot"
+              >http://localhost:4343/oauth?scopes=channel:bot</a
+            >
+          </li>
+          <li>
+            For your bot account:
+            <a
+              href="http://localhost:4343/oauth?scopes=user:read:chat%20user:write:chat%20user:bot%20moderator:manage:shoutouts"
+              >http://localhost:4343/oauth?scopes=user:read:chat%20user:write:chat%20user:bot%20moderator:manage:shoutouts</a
+            >
+          </li>
+        </ul>
+        <p>
+          The next step is to run the bots <a href="setup_run.html">Next</a>
+        </p>
+      </section>
+
+      <aside>
+        <h2>Pages</h2>
+        <ul class="sidebar">
+          <li><a href="setup_app.html">Twitch App</a></li>
+          <li><a href="setup_env.html">Enviroment</a></li>
+          <li><a href="setup_auth.html">Authenticate</a></li>
+          <li><a href="setup_run.html">Run</a></li>
+        </ul>
+      </aside>
+    </main>
+
+    <nav>
+      <label><a href="index.html">Home</a></label>
+      <label><a href="setup_env.html">Back</a></label>
+      <label><a href="setup_run.html">Next</a></label>
+      <label class="start"><a href="../index.html">Project Emporium</a></label>
+    </nav>
+  </body>
+</html>

@@ -1,0 +1,114 @@
+@import url("palette.css");
+
+/* 
+Positioning – affects how the element is placed.
+    position, top, right, bottom, left, z-index
+
+Box Model – size and spacing.
+    display, width, height, margin, padding, box-sizing
+
+Typography – text styling.
+    font, font-size, line-height, color, text-align, letter-spacing
+
+Visual – backgrounds, borders, shadows.
+    background, border, box-shadow, opacity
+
+Miscellaneous – transitions, animations, etc.
+    transition, transform, cursor, overflow 
+*/
+
+html {
+  margin: 0%;
+  padding: 0%;
+
+  font-family: Tahoma, Geneva, sans-serif;
+  font-size: 16px;
+  line-height: 1.5em;
+  color: var(--color-1);
+
+  background-color: var(--color-1);
+}
+
+a {
+  text-decoration: none;
+  color: var(--color-9);
+}
+a:hover {
+  text-decoration: underline;
+}
+
+body {
+  width: 90%;
+  margin: auto;
+  margin-top: 1%;
+  padding: 1%;
+
+  color: var(--color-1);
+
+  background-color: var(--color-3);
+
+  overflow-y: auto;
+}
+
+main {
+  display: flex;
+  margin: 1%;
+  padding: 1%;
+  gap: 1%;
+
+  background-color: var(--color-4);
+}
+
+section {
+  flex: 3;
+  padding: 1%;
+
+  color: var(--color-2);
+
+  background-color: var(--color-5);
+}
+
+aside {
+  flex: 0.4;
+  padding: 1%;
+
+  color: var(--color-2);
+
+  background-color: var(--color-5);
+}
+
+nav {
+  justify-content: space-between;
+  align-items: center;
+
+  display: flex;
+  margin: 1%;
+  padding: 1%;
+
+  background-color: var(--color-4);
+}
+
+label {
+  margin-right: 1%;
+  padding: 1%;
+
+  color: var(--color-2);
+
+  background-color: var(--color-5);
+}
+
+label[class="start"] {
+  margin-left: auto;
+  padding: auto;
+}
+
+ul {
+  margin: 1%;
+  padding: 0%;
+
+  list-style: none;
+}
+
+ul[class="sidebar"] {
+  font-size: large;
+}
