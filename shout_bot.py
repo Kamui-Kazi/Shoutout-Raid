@@ -43,6 +43,7 @@ class ShoutBot(commands.Bot):
         else:
             # This is the first run, so skip EventSub subscription and mark it as completed
             LOGGER.info("First run — skipping EventSub subscription")
+            LOGGER.info("visit this link with both accounts to authenticate this program: http://localhost:4343/oauth?scopes=channel:bot%20user:read:chat%20user:write:chat%20user:bot%20moderator:manage:shoutouts")
             async with self.token_database.acquire() as connection:
                 await connection.execute(
                     """CREATE TABLE IF NOT EXISTS tokens(user_id TEXT PRIMARY KEY, token TEXT NOT NULL, refresh TEXT NOT NULL)"""
